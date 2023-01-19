@@ -1,0 +1,22 @@
+{
+  "name": "foundations-project",
+  "version": "1.0.0",
+  "description": "Expense reimbursement system",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jpaolosese/foundations-project.git"
+  },
+  "author": "JP Sese",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jpaolosese/foundations-project/issues"
+  },
+  "homepage": "https://github.com/jpaolosese/foundations-project#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
