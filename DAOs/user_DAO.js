@@ -20,6 +20,16 @@ function addUser(email, password, role = "employee") {
     return docClient.put(params).promise();
 }
 
+// Verify user
+function retrieveUserByEmail(email) {
+    const params = {
+        TableName: 'reimbursement_users',
+        Key: email
+    }
+    return docClient.get(params).promise();
+}
+
 module.exports = {
-    addUser
+    addUser,
+    retrieveUserByEmail
 }

@@ -1,3 +1,6 @@
+// Foundations Project
+// Two DBs: One for users, one for tickets
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const PORT = 3000;
@@ -19,6 +22,30 @@ server.listen(PORT, () => {
 // With email + password
 server.post('/login', async (req, res) => {
     console.log("login screen")
+    const email = req.body.email;
+    const password = req.body.password;
+
+    const user = await user_DAO.retrieveUserByEmail(email)
+    const userData = user.Item;
+    if (userData) { // Check if user exists
+        if (userData.password === password) { // verify password
+            res.send({
+                "message": "Successfully logged in."
+            })
+        } else { // if password is wrong
+            res.statusCode = 400;
+            res.send({
+                "message": "Invalid password"
+            })
+
+        }
+    } else { // if user doesn't exist
+        res.statusCode = 400; 
+        res.send({
+            "message": "Invalid username"
+        })
+    }
+    // send JWT
 });
 
 // Per MVP: Users (employees or managers) must be able to register a new account
