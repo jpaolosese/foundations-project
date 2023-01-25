@@ -18,16 +18,18 @@ const docClient = new AWS.DynamoDB.DocumentClient();
  *      viewDeniedReimbursements
  */
 
-function addReimbursement(email, amount, description) {
+function addReimbursement(user_email, amount, description, reimbursement_id = Date.now()) {
     const params = {
         TableName: 'reimbursements',
         Item: {
-            email,
+            reimbursement_id: String(reimbursement_id),
+            user_email,
             amount,
-            description
+            description,
+            status: "pending"
         }
     }
-    docClient.put(params).promise();
+    return docClient.put(params).promise();
 }
 
 function processReimbursement(status) {
@@ -37,9 +39,22 @@ function processReimbursement(status) {
             status
         }
     }
+    return docClient.update(params).promise();
     // more to add
+}
+
+function viewReimbursementsByEmail(email) {
+    const params = {
+        TableName: 'reimbursements',
+        Item: {
+            user_email: email
+        }
+    }
+    return docClient.query(params).promise;
 }
 
 module.exports = {
     addReimbursement
+    processReimbursement,
+    viewReimbursementsByEmail
 }

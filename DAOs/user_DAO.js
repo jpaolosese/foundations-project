@@ -1,5 +1,5 @@
 // In order to perform AWS operations, must connect to AWS DynamoDB
-
+const reimbursement = require('./reimbursement_DAO')
 const AWS = require('aws-sdk');
 AWS.config.update({
     region: 'us-west-2'
