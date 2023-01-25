@@ -54,7 +54,7 @@ function viewReimbursementsByEmail(email) {
 }
 
 module.exports = {
-    addReimbursement
+    addReimbursement,
     processReimbursement,
     viewReimbursementsByEmail
 }

@@ -5,7 +5,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const PORT = 3000;
 const server = express();
-const user_DAO = require('./DAOs/user_DAO')
+const user_DAO = require('./DAOs/user_DAO');
+const reimbursement_DAO = require('./DAOs/reimbursement_DAO');
 
 server.use(bodyParser.json());
 
@@ -64,3 +65,20 @@ server.post('/register', async (req, res) => {
         })
     }
 });
+
+server.post('/reimbursements', async (req, res) => {
+    console.log("submit reimbursement")
+    try {
+        // maybe add functionality to check if that email exists in reimbursement_users table?
+        await reimbursement_DAO.addReimbursement(req.body.email, req.body.amount, req.body.description);
+        res.send({
+            "message": "reimbursement submitted!"
+        })
+    } catch (err) {
+        res.statusCode = 500;
+        res.send({
+            "message": err
+        })
+    }
+})
+
