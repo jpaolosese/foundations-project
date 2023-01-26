@@ -27,11 +27,7 @@ server.post('/login', async (req, res) => {
     const password = req.body.password;
 
     try {
-        console.log("how about this far?")
         const user = await user_DAO.retrieveUserByEmail(email);
-        
-        //const userData = user.Items;
-        console.log("even here?")
         if (user) { // Check if user exists
             if (user.Item.password === password) { // verify password
                 res.send({
@@ -109,37 +105,40 @@ server.patch('/reimbursements', async (req, res) => {
     console.log("process reimbursement");
     const email = req.body.email;
     const status = req.body.status;
-    const user = await user_DAO.retrieveUserByEmail(email);
-    const userData = user.Item;
-    const reimbursement = reimbursement_DAO.viewReimbursementsBy(email)
-    const reimbursementData = reimbursement.Item;
-
-    if (userData) { // Check if user exists
-        if (userData.role === "manager") { // Allow only managers to process reimbursements
-            // Now check if status is pending
-            
-            if (reimbursementData && reimbursementData.status === "pending") {
-                await reimbursement_DAO.processReimbursement(status);
+    try {
+        const user = await user_DAO.retrieveUserByEmail(email);
+        if (user) { // Check if user exists
+            if (user.Item.role === "manager") { // Allow only managers to process reimbursements
+                // Now check if status is pending
+                
+                if (reimbursementData && reimbursementData.status === "pending") {
+                    await reimbursement_DAO.processReimbursement(status);
+                    res.send({
+                        "message": "Processed reimbursement!"
+                    })
+                } else {    // If not then status cannot be changed
+                    res.send({
+                        "message": "Reimbursement has already been processed."
+                    })
+                }
+                
+            } else { // Otherwise they cannot process reimbursements
+                res.statusCode = 403;
                 res.send({
-                    "message": "Processed reimbursement!"
-                })
-            } else {    // If not then status cannot be changed
-                res.send({
-                    "message": "Reimbursement has already been processed."
+                    "message": "You are not authorized to approve/deny reimbursements!"
                 })
             }
-            
-        } else { // Otherwise they cannot process reimbursements
-            res.statusCode = 403;
+        } else { // Error if user does not exist
+            res.statusCode = 400;
             res.send({
-                "message": "You are not authorized to approve/deny reimbursements!"
-            })
+                "message": "User does not exist!"
+            });
         }
-    } else { // Error if user does not exist
+    } catch (err) {
         res.statusCode = 400;
         res.send({
-            "message": "User does not exist!"
-        });
+            "message": err
+        })
     }
 
 
