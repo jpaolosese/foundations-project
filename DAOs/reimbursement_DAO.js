@@ -53,8 +53,19 @@ function viewReimbursementsByEmail(email) {
     return docClient.query(params).promise;
 }
 
+function viewReimbursementByID(reimbursement_id) {
+    const params = {
+        TableName: 'reimbursements',
+        Item: {
+            id: reimbursement_id
+        }
+    }
+    return docClient.get(params).promise();
+}
+
 module.exports = {
     addReimbursement,
     processReimbursement,
-    viewReimbursementsByEmail
+    viewReimbursementsByEmail,
+    viewReimbursementByID
 }

@@ -22,10 +22,14 @@ function addUser(email, password, role = "employee") {
 
 // Verify user
 function retrieveUserByEmail(email) {
+    console.log("do you even make it this far?")
     const params = {
         TableName: 'reimbursement_users',
-        Key: email
+        Key: {
+            "email": email
+        }
     }
+    console.log("how about here?");
     return docClient.get(params).promise();
 }
 

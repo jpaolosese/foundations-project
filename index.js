@@ -26,24 +26,34 @@ server.post('/login', async (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
 
-    const user = await user_DAO.retrieveUserByEmail(email)
-    const userData = user.Item;
-    if (userData) { // Check if user exists
-        if (userData.password === password) { // verify password
-            res.send({
-                "message": "Successfully logged in."
-            })
-        } else { // if password is wrong
-            res.statusCode = 400;
-            res.send({
-                "message": "Invalid password"
-            })
+    try {
+        console.log("how about this far?")
+        const user = await user_DAO.retrieveUserByEmail(email);
+        
+        //const userData = user.Items;
+        console.log("even here?")
+        if (user) { // Check if user exists
+            if (user.Item.password === password) { // verify password
+                res.send({
+                    "message": "Successfully logged in."
+                })
+            } else { // if password is wrong
+                res.statusCode = 400;
+                res.send({
+                    "message": "Invalid password"
+                })
 
+            }
+        } else { // if user doesn't exist
+            res.statusCode = 400; 
+            res.send({
+                "message": "Invalid username"
+            })
         }
-    } else { // if user doesn't exist
-        res.statusCode = 400; 
+    } catch (err) {
+        res.statusCode = 400;
         res.send({
-            "message": "Invalid username"
+            "message": err
         })
     }
     // send JWT
@@ -52,24 +62,33 @@ server.post('/login', async (req, res) => {
 // Per MVP: Users (employees or managers) must be able to register a new account
 server.post('/register', async (req, res) => {
     console.log("register screen")
+    const email = req.body.email;
+    const password = req.body.password;
     try {
-        await user_DAO.addUser(req.body.email, req.body.password, req.body.role);
-        res.send({
-            "message": "Registered new user!"
-        });
-    }
-    catch (err) {
-        res.statusCode = 500;
+        const user = await user_DAO.retrieveUserByEmail(email);
+        const userData = user.Item;
+        if (userData) { // if user already exists
+            res.send({
+                "message": "User already exists under that email!"
+            })
+        } else {
+            user_DAO.addUser(email, password);
+            res.send({
+                "message": "Successfully registered!"
+            })
+        }
+    } catch (err) {
+        res.statusCode = 400;
         res.send({
             "message": err
         })
     }
-});
+})
 
+// Per MVP: Users must be able to submit a reimbursement ticket
 server.post('/reimbursements', async (req, res) => {
     console.log("submit reimbursement")
     try {
-        // maybe add functionality to check if that email exists in reimbursement_users table?
         await reimbursement_DAO.addReimbursement(req.body.email, req.body.amount, req.body.description);
         res.send({
             "message": "reimbursement submitted!"
@@ -82,3 +101,46 @@ server.post('/reimbursements', async (req, res) => {
     }
 })
 
+// Per MVP: Managers must be able to approve/deny reimbursement tickets
+// Check if role === "manager", "employee" must not be able to process tickets
+// Do not allow changes in final status
+// i.e. approved -> denied or approved -> pending, denied -> approved or denied -> pending
+server.patch('/reimbursements', async (req, res) => {
+    console.log("process reimbursement");
+    const email = req.body.email;
+    const status = req.body.status;
+    const user = await user_DAO.retrieveUserByEmail(email);
+    const userData = user.Item;
+    const reimbursement = reimbursement_DAO.viewReimbursementsBy(email)
+    const reimbursementData = reimbursement.Item;
+
+    if (userData) { // Check if user exists
+        if (userData.role === "manager") { // Allow only managers to process reimbursements
+            // Now check if status is pending
+            
+            if (reimbursementData && reimbursementData.status === "pending") {
+                await reimbursement_DAO.processReimbursement(status);
+                res.send({
+                    "message": "Processed reimbursement!"
+                })
+            } else {    // If not then status cannot be changed
+                res.send({
+                    "message": "Reimbursement has already been processed."
+                })
+            }
+            
+        } else { // Otherwise they cannot process reimbursements
+            res.statusCode = 403;
+            res.send({
+                "message": "You are not authorized to approve/deny reimbursements!"
+            })
+        }
+    } else { // Error if user does not exist
+        res.statusCode = 400;
+        res.send({
+            "message": "User does not exist!"
+        });
+    }
+
+
+})
