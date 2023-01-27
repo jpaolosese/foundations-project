@@ -32,11 +32,12 @@ function addReimbursement(user_email, amount, description, reimbursement_id = Da
     return docClient.put(params).promise();
 }
 
-function processReimbursement(status) {
+function processReimbursement(new_status, id) {
     const params = {
         TableName: 'reimbursements',
-        Item: {
-            status
+        Key: {
+            "reimbursement_id": id,
+            "status": new_status
         }
     }
     return docClient.update(params).promise();
@@ -57,7 +58,7 @@ function viewReimbursementByID(reimbursement_id) {
     const params = {
         TableName: 'reimbursements',
         Item: {
-            id: reimbursement_id
+            reimbursement_id: reimbursement_id
         }
     }
     return docClient.get(params).promise();
