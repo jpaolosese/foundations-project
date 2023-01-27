@@ -103,7 +103,7 @@ server.post('/register', async (req, res) => {
                 "message": "User already exists under that email!"
             })
         } else {
-            user_DAO.addUser(email, password);
+            user_DAO.addUser(email, password, req.body.role);
             res.send({
                 "message": "Successfully registered!"
             })
@@ -156,27 +156,32 @@ server.post('/reimbursements', async (req, res) => {
 // Do not allow changes in final status
 // i.e. approved -> denied or approved -> pending, denied -> approved or denied -> pending
 server.patch('/reimbursements/:reimbursement_id/status', async (req, res) => {
+    
+    console.log("do you make it this far?");
+    
     console.log("process reimbursement");
     const status = req.body.status;
-    const id = req.body.reimbursement_id;
-    console.log("do you make it this far?");
+    const id = String(req.body.reimbursement_id);
+
+    const authHeader = req.headers.authorization;
+    const token = authHeader.split(" ")[1]
+    const tokenPayload = await jwtUtil.verifyTokenAndReturnPayload(token);
 
     try {
-        const authHeader = req.headers.authorization;
-        const token = authHeader.split(" ")[1];
-        const tokenPayload = jwtUtil.verifyTokenAndReturnPayload(token);
-        console.log(tokenPayload);
-        const role = tokenPayload.role;
-        console.log(role)
+        // const authHeader = req.headers.authorization;
+        // const token = authHeader.split(" ")[1]
+        // const tokenPayload = jwtUtil.verifyTokenAndReturnPayload(token);
+        console.log(tokenPayload.role)
 
-        const data = await reimbursement_DAO.viewReimbursementByID(req.body.reimbursement_id);
+        const data = await reimbursement_DAO.viewReimbursementByID(id);
+        console.log(data)
         const reimbursement = data.Item;
 
         if (reimbursement.status === "pending") {
-            if (role === "manager") {
-                await reimbursement_DAO.processReimbursement(req.body.status, req.body.reimbursement_id);
+            if (await tokenPayload.role == "manager") {
+                await reimbursement_DAO.processReimbursement(status, id);
                 res.send({
-                    "message": `Reimbursement ${req.body.status}`
+                    "message": `Reimbursement processed`
                 })
             } else {
                 res.statusCode = 400;
@@ -198,69 +203,70 @@ server.patch('/reimbursements/:reimbursement_id/status', async (req, res) => {
     }
     
 })
-    //     if (tokenPayload.role === "manager") {
-    //         console.log("make it this far?")
-    //         const data = await reimbursement_DAO.viewReimbursementByID(id);
-    //         console.log("this far?")
-    //         const reimbursement = data.Item;
-    //         if (reimbursement.status === "pending") {
-    //             await reimbursement_DAO.processReimbursement(status, id);
-    //             res.send({
-    //                 "message": `Reimbursement ${status}`
-    //             })
-    //         } else {
-    //             res.statusCode = 400;
-    //             res.send({
-    //                 "message": "Cannot update processed reimbursement"
-    //             })
-    //         }
-    //     } else {
-    //         res.statusCode = 400;
-    //         res.send({
-    //             "message": "you are not authorized to process reimbursements"
-    //         })
-    //     }
-    // } catch (err) {
-    //     res.statusCode = 400;
-    //     res.send({
-    //         "message": err
-    //     })
-    // }
 
-    // try {
-    //     const authHeader = req.header.authorization;
-    //     console.log("how about this far?")
-    //     const token = authHeader.split(" ")[1];
-    //     console.log("here?")
-    //     const tokenPayload = jwtUtil.verifyTokenAndReturnPayload(token);
-    //     console.log("how about here?")
+server.get('/reimbursements/:id', async (req, res) => {
+    if (req.body.reimbursement_id) {
+        let data = await reimbursement_DAO.viewReimbursementByID(req.body.reimbursement_id);
+        res.send({
+            "message": data
+        })
+    } else {
+        res.statusCode = 400;
+        res.send({
+            "message": "No reimbursement with that id exists"
+        })
+    }
+})
+    
 
-    //     if (tokenPayload.role === "manager") {
-    //         console("this far?")
-    //         const data = (await reimbursement_DAO.viewReimbursementByID(id)).Item;
-    //         console.log("do you make it this far?");
-    //         if (data.status === "pending") {
-    //             await reimbursement_DAO.processReimbursement(status);
-    //             res.statusCode = 200;
-    //             res.send({
-    //                 "message": `Reimbursement ${data.id} processed`
-    //             });
-    //         } else {
-    //             res.statusCode = 400;
-    //             res.send({
-    //                 "message": "Cannot change already processed reimbursement"
-    //             });
-    //         }
-    //     } else {
-    //         res.statusCode = 400;
-    //         res.send({
-    //             "message": "You are not authorized to process reimbursements"
-    //         });
-    //     }
-    // } catch (err) {
-    //     res.statusCode = 400;
-    //     res.send({
-    //         "message": err
-    //     })
-    // }
+server.get('/reimbursements/:email', async (req, res) => {
+    try {
+        if (req.query.email) {
+            let data = await reimbursement_DAO.viewReimbursementsByEmail(req.query.email);
+            res.send(data.Items)
+        } else {
+            res.statusCode = 400;
+            res.send({
+                "message": "No email entered!"
+            })
+        }
+    } catch (err) {
+        res.statusCode = 400;
+        res.send({
+            "message": err
+        })
+    }
+})
 
+server.get('/reimbursements/:status', async (req, res) => {
+    try {
+        if (req.query.status) {
+            let data = await reimbursement_DAO.viewReimbursementByStatus(req.body.status);
+            res.send({
+                "message": data
+            })
+        } else {
+
+        }
+    } catch (err) {
+        res.statusCode = 400;
+        res.send({
+            "message": "No status entered!"
+        })
+    }
+})
+
+server.get('/reimbursements', async (req, res) => {
+    const data = reimbursement_DAO.viewAllReimbursements();
+
+    try {
+        res.send({
+            "message": data
+        })
+    } catch (err) {
+        res.status = 400;
+        res.send({
+            "message": err
+        })
+    }
+})

@@ -35,9 +35,15 @@ function addReimbursement(user_email, amount, description, reimbursement_id = Da
 function processReimbursement(new_status, id) {
     const params = {
         TableName: 'reimbursements',
+        UpdateExpression: "set #s = :s",
+        ExpressionAttributeNames: {
+            "#s": "status"
+        },
+        ExpressionAttributeValues: {
+            ":s": new_status
+        },
         Key: {
-            "reimbursement_id": id,
-            "status": new_status
+            reimbursement_id: id
         }
     }
     return docClient.update(params).promise();
@@ -51,22 +57,41 @@ function viewReimbursementsByEmail(email) {
             user_email: email
         }
     }
-    return docClient.query(params).promise;
+    return docClient.query(params).promise();
 }
 
 function viewReimbursementByID(reimbursement_id) {
     const params = {
         TableName: 'reimbursements',
-        Item: {
+        Key: {
             reimbursement_id: reimbursement_id
         }
     }
     return docClient.get(params).promise();
 }
 
+function viewReimbursementByStatus(status) {
+    const params = {
+        TableName: 'reimbursements',
+        Key: {
+            status: status
+        }
+    }
+    return docClient.query(params).promise();
+}
+
+function viewAllReimbursements() {
+    const params = {
+        TableName: 'reimbursements'
+    }
+    return docClient.scan(params).promise()
+}
+
 module.exports = {
     addReimbursement,
     processReimbursement,
     viewReimbursementsByEmail,
-    viewReimbursementByID
+    viewReimbursementByID,
+    viewReimbursementByStatus,
+    viewAllReimbursements
 }
